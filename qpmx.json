@@ -1,0 +1,33 @@
+{
+    "dependencies": [
+        {
+            "package": "de.skycoder42.qsslserver",
+            "provider": "qpm",
+            "version": "1.0.0"
+        }
+    ],
+    "license": {
+        "file": "LICENSE",
+        "name": "BSD_3_CLAUSE"
+    },
+    "prcFile": "",
+    "priFile": "qtremoteobjectssslbackend.pri",
+    "priIncludes": [
+    ],
+    "publishers": {
+        "qpm": {
+            "author": {
+                "email": "skycoder42.de@gmx.de",
+                "name": "Skycoder"
+            },
+            "description": "A backend for QtRemoteObjects to connect via an encrypted SSL connection",
+            "name": "de.skycoder42.qtremoteobjectsbackend.ssl",
+            "repository": {
+                "type": "GITHUB",
+                "url": "https://github.com/Skycoder42/QtRemoteObjectsSslBackend.git"
+            },
+            "webpage": "https://github.com/Skycoder42/QtRemoteObjectsSslBackend"
+        }
+    },
+    "source": false
+}
