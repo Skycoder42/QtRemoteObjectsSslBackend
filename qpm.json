@@ -1,0 +1,23 @@
+{
+    "author": {
+        "email": "skycoder42.de@gmx.de",
+        "name": "Skycoder"
+    },
+    "dependencies": [
+        "de.skycoder42.qsslserver@1.0.0"
+    ],
+    "description": "A backend for QtRemoteObjects to connect via an encrypted SSL connection",
+    "license": "BSD_3_CLAUSE",
+    "name": "de.skycoder42.qtremoteobjectsbackend.ssl",
+    "pri_filename": "qtremoteobjectssslbackend.pri",
+    "repository": {
+        "type": "GITHUB",
+        "url": "https://github.com/Skycoder42/QtRemoteObjectsSslBackend.git"
+    },
+    "version": {
+        "fingerprint": "",
+        "label": "1.0.0",
+        "revision": ""
+    },
+    "webpage": "https://github.com/Skycoder42/QtRemoteObjectsSslBackend"
+}
