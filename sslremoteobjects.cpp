@@ -5,11 +5,13 @@
 #include <QCoreApplication>
 #include <QFile>
 #include <QSslKey>
+#include <QMutex>
 #include "rosslclientio.h"
 #include "rosslserverio.h"
 
 namespace {
 
+QMutex _sslMutex;
 QHash<QString, QSslConfiguration> _sslConfigs;
 
 QUrl createBaseUrl(const QString &host, quint16 port)
@@ -32,7 +34,7 @@ Q_COREAPP_STARTUP_FUNCTION(__setup_tslro)
 
 const QString SslRemoteObjects::UrlScheme = QStringLiteral("ssl");
 
-QUrl SslRemoteObjects::generateP12Url(const QString &host, quint16 port, const QString &path, const QString &passPhrase)
+QUrl SslRemoteObjects::generateP12Url(const QString &host, quint16 port, const QString &path, const QString &passPhrase, bool clearCaCerts, bool requireClientAuth)
 {
 	auto url = createBaseUrl(host, port);
 	url.setPath(QStringLiteral("/p12"));
@@ -41,6 +43,10 @@ QUrl SslRemoteObjects::generateP12Url(const QString &host, quint16 port, const Q
 	query.addQueryItem(QStringLiteral("path"), path);
 	if(!passPhrase.isEmpty())
 		query.addQueryItem(QStringLiteral("pass"), passPhrase);
+	if(!clearCaCerts)
+		query.addQueryItem(QStringLiteral("keepca"), QString());
+	if(!requireClientAuth)
+		query.addQueryItem(QStringLiteral("noauth"), QString());
 	url.setQuery(query);
 
 	return url;
@@ -58,15 +64,21 @@ QUrl SslRemoteObjects::generateConfigUrl(const QString &host, quint16 port, cons
 	return url;
 }
 
-QUrl SslRemoteObjects::generatePlainUrl(const QString &host, quint16 port)
+QUrl SslRemoteObjects::generatePlainUrl(const QString &host, quint16 port, bool verifyPartner)
 {
 	auto url = createBaseUrl(host, port);
 	url.setPath(QStringLiteral("/plain"));
+	if(verifyPartner) {
+		QUrlQuery query;
+		query.addQueryItem(QStringLiteral("verify"), QString());
+		url.setQuery(query);
+	}
 	return url;
 }
 
 QString SslRemoteObjects::prepareSslConfig(const QSslConfiguration &config)
 {
+	QMutexLocker locker(&_sslMutex);
 	auto id = QUuid::createUuid().toString();
 	_sslConfigs.insert(id, config);
 	return id;
@@ -74,6 +86,7 @@ QString SslRemoteObjects::prepareSslConfig(const QSslConfiguration &config)
 
 QSslConfiguration SslRemoteObjects::getSslConfig(const QString &key)
 {
+	QMutexLocker locker(&_sslMutex);
 	return _sslConfigs.value(key);
 }
 
@@ -104,7 +117,10 @@ QSslConfiguration SslRemoteObjects::prepareFromUrl(const QUrl &url)
 		file.close();
 
 		auto conf = QSslConfiguration::defaultConfiguration();
-		conf.setPeerVerifyMode(QSslSocket::VerifyPeer);
+		if(!params.hasQueryItem(QStringLiteral("noauth")))
+			conf.setPeerVerifyMode(QSslSocket::VerifyPeer);
+		if(params.hasQueryItem(QStringLiteral("keepca")))
+			caCerts.append(conf.caCertificates());
 		conf.setCaCertificates(caCerts);
 		conf.setLocalCertificate(cert);
 		conf.setPrivateKey(key);
@@ -113,7 +129,8 @@ QSslConfiguration SslRemoteObjects::prepareFromUrl(const QUrl &url)
 		return getSslConfig(params.queryItemValue(QStringLiteral("key")));
 	else if(type == QStringLiteral("/plain")){
 		auto conf = QSslConfiguration::defaultConfiguration();
-		conf.setPeerVerifyMode(QSslSocket::VerifyNone);
+		if(!params.hasQueryItem(QStringLiteral("verify")))
+			conf.setPeerVerifyMode(QSslSocket::VerifyNone);
 		return conf;
 	} else {
 		qCritical() << "Invalid remote objects TLS url" << url;

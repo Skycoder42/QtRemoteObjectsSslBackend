@@ -26,7 +26,8 @@ QIODevice *RoSslServerIo::connection() const
 void RoSslServerIo::onError(QAbstractSocket::SocketError error)
 {
 	Q_UNUSED(error)
-	qWarning() << Q_FUNC_INFO << _socket->errorString();
+	if(error != QAbstractSocket::RemoteHostClosedError)
+		qWarning() << Q_FUNC_INFO << _socket->errorString();
 }
 
 void RoSslServerIo::onSslErrors(const QList<QSslError> &errors)
